@@ -7,7 +7,7 @@ const { Router, response } = require("express");
 require("dotenv").config();
 const app = express();
 const server = http.createServer(app);
-const PORT = 8080;
+const PORT = 8000;
 app.use(
   cors({
     origin: "*",
@@ -36,9 +36,9 @@ app.post("/register", function (req, res, next) {
   const username = req.body.username;
   const nickname = req.body.nickname;
   const password = req.body.password;
+  console.log(username);
   let accessToken = generateAccessToken(username);
   let refreshToken = generateRefreshToken(username);
-  connection.connect();
   const random = Math.floor(Math.random() * 3);
 
   let sql = `insert into user(username,nickname,password,profile,access_token,refresh_token) values ('${username}','${nickname}','${password}','${profiles[random]}','${accessToken}','${refreshToken}');`;
@@ -81,12 +81,30 @@ const generateRefreshToken = (id) => {
   });
 };
 
+app.get("/search", (req, res) => {
+  const tags = req.query.tags;
+  let sql = `select link, thumbnail from video where video_id in (select video_id from video_cate where cate_id in (select cate_id from cate where cate_title in ('축구')));`;
+  connection.query(sql, function (err, result) {
+    if (err) {
+      return res.status(400).json({
+        code: 400,
+        message: "fuck you",
+      });
+    } else {
+      return res.status(200).json({
+        code: 200,
+        data: result,
+        message: "good",
+      });
+    }
+  });
+});
+
 app.post("/upload", (req, res) => {
-  connection.connect();
   const title = req.body.title;
   const content = req.body.text;
   const tags = req.body.tags;
-  for (let i = 0; i < tegs.length; i++) {
+  for (let i = 0; i < tags.length; i++) {
     let sql = `select cate_id from cate where cate_title = ${tags[i]};`;
     connection.query(sql, function (err, result) {
       if (result.length === 0) {
@@ -106,7 +124,6 @@ app.post("/upload", (req, res) => {
 });
 
 app.post("/login", (req, res) => {
-  connection.connect();
   let username = req.body.username;
   let password = req.body.password;
   let token;
