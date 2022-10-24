@@ -50,7 +50,6 @@ app.post("/register", function (req, res, next) {
         message: "Id is already used.",
       });
     }
-
     console.log(result);
     return res.status(200).json({
       profile: profiles[random],
@@ -58,15 +57,6 @@ app.post("/register", function (req, res, next) {
       message: "OK",
     });
   });
-
-  // console.log(accessToken);
-  // console.log(refreshToken);
-  // sql = "SELECT * FROM USER";
-  // connection.query(sql, function (err, results, fields) {
-  //   if (err) console.log(err);
-  //   console.log(results);
-  // });
-  // connection.end();
 });
 
 const generateAccessToken = (id) => {
@@ -100,27 +90,24 @@ app.get("/search", (req, res) => {
   });
 });
 
-app.post("/upload", (req, res) => {
-  const title = req.body.title;
-  const content = req.body.text;
-  const tags = req.body.tags;
-  for (let i = 0; i < tags.length; i++) {
-    let sql = `select cate_id from cate where cate_title = ${tags[i]};`;
-    connection.query(sql, function (err, result) {
-      if (result.length === 0) {
-        sql = `insert into cate(cate_title) values(${tags[i]});`;
-        connection.query(sql, function (err, result) {
-          if (err) {
-            console.log("insert faild");
-          } else {
-            console.log("insert success");
-          }
-        });
-      } else {
-        console.log(result);
-      }
-    });
-  }
+app.get("/getallvideo", (req, res) => {
+  let sql = `select * from video;`;
+  connection.query(sql, function (err, result) {
+    if (err) {
+      return res.status(400).json({
+        code: 400,
+        message: "OK",
+      });
+    } else {
+      console.log("성공");
+
+      return res.status(400).json({
+        code: 200,
+        message: "OK",
+        data: result,
+      });
+    }
+  });
 });
 
 app.post("/login", (req, res) => {
@@ -143,6 +130,7 @@ app.post("/login", (req, res) => {
     });
   });
 });
+
 const authenticateAccessToken = (req, res, next) => {
   let authHeader = req.headers["authorization"];
   let token = authHeader && authHeader.split(" ")[1];
@@ -160,19 +148,6 @@ const authenticateAccessToken = (req, res, next) => {
     next();
   });
 };
-
-app.post("/refresh", (req, res) => {
-  let refreshToken = req.body.refreshToken;
-  if (!refreshToken) return res.sendStatus(401);
-
-  jwt.verify(refreshToken, process.env.REFRESH_TOKEN_SECRET, (error, user) => {
-    if (error) return res.sendStatus(403);
-
-    const accessToken = generateAccessToken(user.id);
-
-    res.json({ accessToken });
-  });
-});
 
 app.get("/user", authenticateAccessToken, (req, res) => {
   console.log(req.user);
