@@ -71,9 +71,40 @@ const generateRefreshToken = (id) => {
   });
 };
 
+app.get("/getonevideo", (req, res) => {
+  const id = req.query.id;
+  console.log(id);
+  const sql = `select * from video where video_id = ${id};`;
+  connection.query(sql, function (err, result) {
+    if (err) console.log(err);
+    else {
+      return res.status(200).json({
+        code: 200,
+        message: "OK",
+        data: result,
+      });
+    }
+  });
+});
+
+app.get("/searchbyname", (req, res) => {
+  const name = req.query.name;
+  const sql = `select * from video where title like '%${name}%';`;
+  connection.query(sql, function (err, result) {
+    if (err) console.log(err);
+    else {
+      return res.status(200).json({
+        code: 200,
+        data: result,
+        message: "good",
+      });
+    }
+  });
+});
+
 app.get("/search", (req, res) => {
-  const tags = req.query.tags;
-  let sql = `select link, thumbnail from video where video_id in (select video_id from video_cate where cate_id in (select cate_id from cate where cate_title in ('축구')));`;
+  const tag = req.query.tag;
+  let sql = `select link, thumbnail from video where video_id in (select video_id from video_cate where cate_id in (select cate_id from cate where cate_title in ('${tag}')));`;
   connection.query(sql, function (err, result) {
     if (err) {
       return res.status(400).json({
@@ -90,6 +121,104 @@ app.get("/search", (req, res) => {
   });
 });
 
+app.get("/getcomments", (req, res) => {
+  const video_id = req.query.id;
+  let sql = `select * from comment where video_id = ${video_id};`;
+  connection.query(sql, function (err, result) {
+    if (err) {
+      return res.status(400).json({
+        code: 400,
+        message: "OK",
+      });
+    } else {
+      console.log("성공");
+      return res.status(200).json({
+        code: 200,
+        message: "OK",
+        data: result,
+      });
+    }
+  });
+});
+
+app.post("/addcomment", (req, res) => {
+  const token = req.body.token;
+  const text = req.body.text;
+  const video_id = req.body.video_id;
+  let user_id = null;
+  console.log("add")
+  console.log(text,token,video_id)
+
+  let sql = `select user_id from user where access_token = '${token}';`;
+
+  connection.query(sql, function (err, result) {
+    if (err) {
+      console.log(err)
+      return res.status(400).json({
+        code: 400,
+        message: "user 존재하지 않음",
+      });
+    } else {
+      user_id = result[0].user_id;
+      sql = `insert into comment(owner,content,video_id,create_at) values(${user_id},'${text}',${video_id},'2022-12-12');`;
+      connection.query(sql, function (err, result) {
+        if (err) {
+          return res.status(400).json({
+            code: 400,
+            message: "insert 실패",
+          });
+        } else {
+          return res.status(200).json({
+            code: 200,
+            message: "성공",
+          });
+        }
+      });
+    }
+  });
+});
+app.get("/getprofile1", (req, res) => {
+  const token = req.query.token;
+  let sql = `select * from user where access_token = '${token}';`;
+  console.log("getprofile");
+  connection.query(sql, function (err, result) {
+    if (err) {
+      return res.status(400).json({
+        code: 400,
+        message: "NO",
+      });
+    } else {
+      return res.status(200).json({
+        code: 200,
+        message: "OK",
+        data: result,
+      });
+    }
+  });
+});
+
+
+
+app.get("/getprofile", (req, res) => {
+  const id = req.query.id;
+  let sql = `select * from user where user_id = ${id};`;
+  console.log("getprofile");
+  console.log(id);
+  connection.query(sql, function (err, result) {
+    if (err) {
+      return res.status(400).json({
+        code: 400,
+        message: "NO",
+      });
+    } else {
+      return res.status(200).json({
+        code: 200,
+        message: "OK",
+        data: result,
+      });
+    }
+  });
+});
 app.get("/getallvideo", (req, res) => {
   let sql = `select * from video;`;
   connection.query(sql, function (err, result) {
@@ -101,7 +230,7 @@ app.get("/getallvideo", (req, res) => {
     } else {
       console.log("성공");
 
-      return res.status(400).json({
+      return res.status(200).json({
         code: 200,
         message: "OK",
         data: result,
